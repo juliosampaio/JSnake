@@ -35,11 +35,49 @@ class Food extends GameObject {
     this.position = Utils.randomPosition(maxX, maxY);
   }
 }
+
 class Snake extends GameObject {
   constructor(position, engine) {
     super(position, engine);
-    this.body = [new GameObject(position, engine)];
+    const head = new GameObject(position, engine);
+    const tailPos = { ...position };
+    tailPos.x = tailPos.x - 1;
+    tailPos.y = tailPos.y;
+    const tail = new GameObject(tailPos, engine);
+    this.body = [head, tail];
+    this.direction = NORTH;
+  }
+  moveNorth() {
+    this.direction = NORTH;
+    this.move();
+  }
+  moveSouth() {
+    this.direction = SOUTH;
+    this.move();
+  }
+  moveEast() {
     this.direction = EAST;
+    this.move();
+  }
+  moveWest() {
+    this.direction = WEST;
+    this.move();
+  }
+  move() {
+    const body = [...this.body];
+    const head = body.shift();
+    let previousPartPosition = { ...head.position };
+    let { x, y } = head.position;
+    if (this.direction === NORTH) y--;
+    if (this.direction === SOUTH) y++;
+    if (this.direction === EAST) x++;
+    if (this.direction === WEST) x--;
+    head.position = { x, y };
+    body.forEach(part => {
+      const partPosition = { ...part.position };
+      part.position = { ...previousPartPosition };
+      previousPartPosition = partPosition;
+    });
   }
 }
 class RenderingEngine {
@@ -67,6 +105,8 @@ class Canvas2DEngine extends RenderingEngine {
     super();
     const canvas = document.getElementById("canvas");
     this.ctx = canvas.getContext("2d");
+    this.width = canvas.width;
+    this.height = canvas.height;
   }
   clear() {
     this.ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -97,8 +137,9 @@ class WebGLEngine extends RenderingEngine {
 class Game {
   constructor(engine) {
     this.engine = engine;
-    this.food = new Food(10, Utils.randomPosition(100, 100), this.engine);
-    this.snake = new Snake(Utils.randomPosition(100, 100), this.engine);
+    const { width, height } = this.engine;
+    this.food = new Food(10, Utils.randomPosition(width, height), this.engine);
+    this.snake = new Snake({ x: width / 2, y: height / 2 }, this.engine);
     this.frameId = 0;
   }
   start() {
